@@ -56,6 +56,7 @@
   EXTERN     "extern"
   DEF        "def"
   VAR        "var"
+  GLOBAL     "global" /* Aggiunta nuova */
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -71,6 +72,7 @@
 %type <FunctionAST*> definition
 %type <PrototypeAST*> external
 %type <PrototypeAST*> proto
+%type <GlobalExpr*> globalvar                            /*Da fare*/
 %type <std::vector<std::string>> idseq
 %type <BlockExprAST*> blockexp
 %type <std::vector<VarBindingAST*>> vardefs
@@ -80,36 +82,70 @@
 %%
 %start startsymb;
 
+
 startsymb:
 program                 { drv.root = $1; }
+
 
 program:
   %empty                { $$ = new SeqAST(nullptr,nullptr); }
 |  top ";" program      { $$ = new SeqAST($1,$3); };
 
+
 top:
 %empty                  { $$ = nullptr; }
 | definition            { $$ = $1; }
-| external              { $$ = $1; };
+| external              { $$ = $1; }
+| globalvar             { $$ = $1; };   /* Da fare */
+
 
 definition:
   "def" proto exp       { $$ = new FunctionAST($2,$3); $2->noemit(); };
 
+
 external:
   "extern" proto        { $$ = $2; };
 
+
 proto:
   "id" "(" idseq ")"    { $$ = new PrototypeAST($1,$3);  };
+
+
+globalvar:          /* Da fare */
+  "global" "id"         { $$ = new GlobalExpr($2);  };
+
 
 idseq:
   %empty                { std::vector<std::string> args;
                          $$ = args; }
 | "id" idseq            { $2.insert($2.begin(),$1); $$ = $2; };
 
+
 %left ":";
 %left "<" "==";
 %left "+" "-";
 %left "*" "/";
+
+
+stmsts:          /* Da fare */
+  stmt                  { $$ = $1 }
+| stmt ";" stmts        {  };
+
+
+stmt:          /* Da fare */
+  assignment            {  }
+| block                 {  }
+| exp                   {  };
+
+
+assignment:          /* Da fare */
+  "id" "=" exp          {  };
+
+
+block:          /* Da fare */
+  "{" stmts "}"         {  };
+| "{" vardefs ";" stmts "}" {  };
+
 
 exp:
   exp "+" exp           { $$ = new BinaryExprAST('+',$1,$3); }
@@ -122,34 +158,47 @@ exp:
 | expif                 { $$ = $1; }
 | blockexp              { $$ = $1; };
 
+
 blockexp:
   "{" vardefs ";" exp "}" { $$ = new BlockExprAST($2,$4); }
-  
+
+
+initexp:          /* Da fare */
+  %empty                {  }
+| "=" exp               {  }
+
+
 vardefs:
   binding                 { std::vector<VarBindingAST*> definitions;
                             definitions.push_back($1);
                             $$ = definitions; }
 | vardefs ";" binding     { $1.push_back($3);
                             $$ = $1; }
-                            
+
+
 binding:
-  "var" "id" "=" exp      { $$ = new VarBindingAST($2,$4); }
-                      
+  "var" "id" initexp     { $$ = new VarBindingAST($2,$4); }          /* Da fare */
+
+
 expif:
   condexp "?" exp ":" exp { $$ = new IfExprAST($1,$3,$5); }
+
 
 condexp:
   exp "<" exp           { $$ = new BinaryExprAST('<',$1,$3); }
 | exp "==" exp          { $$ = new BinaryExprAST('=',$1,$3); }
 
+
 idexp:
   "id"                  { $$ = new VariableExprAST($1); }
 | "id" "(" optexp ")"   { $$ = new CallExprAST($1,$3); };
+
 
 optexp:
   %empty                { std::vector<ExprAST*> args;
 			 $$ = args; }
 | explist               { $$ = $1; };
+
 
 explist:
   exp                   { std::vector<ExprAST*> args;
@@ -157,8 +206,10 @@ explist:
 			 $$ = args;
                         }
 | exp "," explist       { $3.insert($3.begin(), $1); $$ = $3; };
- 
+
+
 %%
+
 
 void
 yy::parser::error (const location_type& l, const std::string& m)
