@@ -19,7 +19,7 @@
   class FunctionAST;
   class SeqAST;
   class PrototypeAST;
-  class BlockExprAST;
+//  class BlockExprAST;
   class VarBindingAST;
 }
 
@@ -72,9 +72,9 @@
 %type <FunctionAST*> definition
 %type <PrototypeAST*> external
 %type <PrototypeAST*> proto
-%type <GlobalExpr*> globalvar                            /*Da fare*/
+%type <GlobalExprAST*> globalvar                            /*Da fare*/
 %type <std::vector<std::string>> idseq
-%type <BlockExprAST*> blockexp
+//%type <BlockExprAST*> blockexp
 %type <std::vector<VarBindingAST*>> vardefs
 %type <VarBindingAST*> binding
 
@@ -112,7 +112,7 @@ proto:
 
 
 globalvar:          /* Da fare */
-  "global" "id"         { $$ = new GlobalExpr($2);  };
+  "global" "id"         { $$ = new GlobalExprAST($2);  };
 
 
 idseq:
@@ -128,23 +128,25 @@ idseq:
 
 
 stmsts:          /* Da fare */
-  stmt                  { $$ = $1 }
-| stmt ";" stmts        {  };
+  stmt                  { std::vector<StmtAST*> args;
+                          args.push_back($1);
+                          $$ = args; }
+| stmt ";" stmts        { $3.insert($3.begin(), $1); $$ = $3; };
 
 
 stmt:          /* Da fare */
-  assignment            {  }
-| block                 {  }
-| exp                   {  };
+  assignment            { $$ = $1 }
+| block                 { $$ = $1 }
+| exp                   { $$ = $1 };
 
 
 assignment:          /* Da fare */
-  "id" "=" exp          {  };
+  "id" "=" exp          { $$ = new AssignmentAST($1,$3);};
 
 
 block:          /* Da fare */
-  "{" stmts "}"         {  };
-| "{" vardefs ";" stmts "}" {  };
+  "{" stmts "}"         { $$ = $2 }
+| "{" vardefs ";" stmts "}" { $$ = new BlockAST($2, $4) };
 
 
 exp:
@@ -155,17 +157,17 @@ exp:
 | idexp                 { $$ = $1; }
 | "(" exp ")"           { $$ = $2; }
 | "number"              { $$ = new NumberExprAST($1); }
-| expif                 { $$ = $1; }
-| blockexp              { $$ = $1; };
+| expif                 { $$ = $1; };
+//| blockexp              { $$ = $1; };
 
 
-blockexp:
-  "{" vardefs ";" exp "}" { $$ = new BlockExprAST($2,$4); }
+//blockexp:
+//  "{" vardefs ";" exp "}" { $$ = new BlockExprAST($2,$4); }
 
 
 initexp:          /* Da fare */
-  %empty                {  }
-| "=" exp               {  }
+  %empty                { $$ = nullptr; }         // non sicuro
+| "=" exp               {  };
 
 
 vardefs:
@@ -177,7 +179,7 @@ vardefs:
 
 
 binding:
-  "var" "id" initexp     { $$ = new VarBindingAST($2,$4); }          /* Da fare */
+  "var" "id" initexp     { $$ = new VarBindingAST($2,$3); }          /* Da fare */
 
 
 expif:
