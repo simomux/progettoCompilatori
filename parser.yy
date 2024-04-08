@@ -21,6 +21,7 @@
   class PrototypeAST;
 //  class BlockExprAST;
   class VarBindingAST;
+  class GlobalVarAST;
 }
 
 // The parsing context.
@@ -56,7 +57,7 @@
   EXTERN     "extern"
   DEF        "def"
   VAR        "var"
-  GLOBAL     "global" /* Aggiunta nuova */
+  GLOBAL     "global"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -72,11 +73,18 @@
 %type <FunctionAST*> definition
 %type <PrototypeAST*> external
 %type <PrototypeAST*> proto
-%type <GlobalExprAST*> globalvar                            /*Da fare*/
 %type <std::vector<std::string>> idseq
 //%type <BlockExprAST*> blockexp
 %type <std::vector<VarBindingAST*>> vardefs
 %type <VarBindingAST*> binding
+
+///TODO: create AST nodes
+%type <GlobalVarAST*> globalvar
+%type <BlockAST*> block
+%type <> stmts
+%type <> stmt
+%type <> assignment
+%type <> initexp
 
 
 %%
@@ -96,7 +104,7 @@ top:
 %empty                  { $$ = nullptr; }
 | definition            { $$ = $1; }
 | external              { $$ = $1; }
-| globalvar             { $$ = $1; };   /* Da fare */
+| globalvar             { $$ = $1; };
 
 
 definition:
@@ -111,8 +119,8 @@ proto:
   "id" "(" idseq ")"    { $$ = new PrototypeAST($1,$3);  };
 
 
-globalvar:          /* Da fare */
-  "global" "id"         { $$ = new GlobalExprAST($2);  };
+globalvar:
+  "global" "id"         { $$ = new GlobalVarAST($2);  };
 
 
 idseq:
@@ -127,14 +135,12 @@ idseq:
 %left "*" "/";
 
 
-stmsts:          /* Da fare */
-  stmt                  { std::vector<StmtAST*> args;
-                          args.push_back($1);
-                          $$ = args; }
+stmts:
+  stmt                  { std::vector<StmtAST*> stmtList; stmtList.push_back($1); $$ = stmtList; }      // might implement adding at the begin with stmtList.insert(stmtList.begin(), $1)
 | stmt ";" stmts        { $3.insert($3.begin(), $1); $$ = $3; };
 
 
-stmt:          /* Da fare */
+stmt:
   assignment            { $$ = $1 }
 | block                 { $$ = $1 }
 | exp                   { $$ = $1 };
@@ -144,8 +150,8 @@ assignment:          /* Da fare */
   "id" "=" exp          { $$ = new AssignmentAST($1,$3);};
 
 
-block:          /* Da fare */
-  "{" stmts "}"         { $$ = $2 }
+block:
+  "{" stmts "}"         { $$ = new BlockAST($2); }
 | "{" vardefs ";" stmts "}" { $$ = new BlockAST($2, $4) };
 
 
@@ -165,11 +171,6 @@ exp:
 //  "{" vardefs ";" exp "}" { $$ = new BlockExprAST($2,$4); }
 
 
-initexp:          /* Da fare */
-  %empty                { $$ = nullptr; }         // non sicuro
-| "=" exp               {  };
-
-
 vardefs:
   binding                 { std::vector<VarBindingAST*> definitions;
                             definitions.push_back($1);
@@ -180,6 +181,11 @@ vardefs:
 
 binding:
   "var" "id" initexp     { $$ = new VarBindingAST($2,$3); }          /* Da fare */
+
+
+initexp:          /* Da fare */
+  %empty                { $$ = nullptr; }
+| "=" exp               { $$ = $2; };    // Unsure, why not { $$ = new IniitExpAST($2); }
 
 
 expif:
@@ -197,16 +203,12 @@ idexp:
 
 
 optexp:
-  %empty                { std::vector<ExprAST*> args;
-			 $$ = args; }
+  %empty                { std::vector<ExprAST*> args; $$ = args; }
 | explist               { $$ = $1; };
 
 
 explist:
-  exp                   { std::vector<ExprAST*> args;
-                         args.push_back($1);
-			 $$ = args;
-                        }
+  exp                   { std::vector<ExprAST*> args; args.push_back($1); $$ = args; }
 | exp "," explist       { $3.insert($3.begin(), $1); $$ = $3; };
 
 

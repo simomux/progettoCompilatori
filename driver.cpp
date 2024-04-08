@@ -474,3 +474,14 @@ Function *FunctionAST::codegen(driver& drv) {
   return nullptr;
 };
 
+
+
+Value *GlobalVarAST::codegen(driver& drv) {
+  Type *globalVarType = Type::getDoubleTy(*context);
+
+  auto gVariable = new GlobalVariable(*module, globalVarType, false, GlobalValue::CommonLinkage, ConstantFP::getNullValue(Type::getDoubleTy(*context)), Name);
+
+  gVariable->print(errs());
+
+  return gVariable;
+};
