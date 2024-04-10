@@ -104,8 +104,14 @@ lexval VariableExprAST::getLexVal() const {
 // il nome del registro in cui verrà trasferito il valore dalla memoria
 Value *VariableExprAST::codegen(driver& drv) {
   AllocaInst *A = drv.NamedValues[Name];
-  if (!A)
-     return LogErrorV("Variabile "+Name+" non definita");
+  if (!A){
+    GlobalVariable* gVariable = module->getNamedGlobal(Name);
+    if (gVariable != nullptr){
+      return builder->CreateLoad(gVariable->getValueType(), gVariable, Name);
+    }else{
+      return LogErrorV("Variabile " +Name+ " non definita");
+    }
+  }
   return builder->CreateLoad(A->getAllocatedType(), A, Name.c_str());
 }
 
@@ -264,60 +270,6 @@ Value* IfExprAST::codegen(driver& drv) {
     return PN;
 };
 
-/********************** Block Expression Tree *********************/
-BlockExprAST::BlockExprAST(std::vector<VarBindingAST*> Def, ExprAST* Val): 
-         Def(std::move(Def)), Val(Val) {};
-
-Value* BlockExprAST::codegen(driver& drv) {
-   // Un blocco è un'espressione preceduta dalla definizione di una o più variabili locali.
-   // Le definizioni sono opzionali e tuttavia necessarie perché l'uso di un blocco
-   // abbia senso. Ad ogni variabile deve essere associato il valore di una costante o il valore di
-   // un'espressione. Nell'espressione, arbitraria, possono chiaramente comparire simboli di
-   // variabile. Al riguardo, la gestione dello scope (ovvero delle regole di visibilità)
-   // è implementata nel modo seguente, in cui, come esempio, consideremo la definzione: var y = x+1
-   // 1) Viene dapprima generato il codice per valutare l'espressione x+1.
-   //    L'area di memoria da cui "prelevare" il valore di x è scritta in un
-   //    registro SSA che è parte della (rappresentazione interna della) istruzione alloca usata
-   //    per allocare la memoria corrispondente e che è registrata nella symbol table
-   //    Per i parametri della funzione, l'istruzione di allocazione viene generata (come già sappiamo)
-   //    dalla chiamata di codegen in FunctionAST. Per le variabili locali viene generata nel presente
-   //    contesto. Si noti, di passaggio, che tutte le istruzioni di allocazione verranno poi emesse
-   //    nell'entry block, in ordine cronologico rovesciato (rispetto alla generazione). Questo perché
-   //    la routine di utilità (CreateEntryBlockAlloca) genera sempre all'inizio del blocco.
-   // 2) Ritornando all'esempio, bisogna ora gestire l'assegnamento ad y gestendone la visibilità. 
-   //    Come prima cosa viene generata l'istruzione alloca per y. 
-   //    Questa deve essere inserita nella symbol table per futuri riferimenti ad y
-   //    all'interno del blocco. Tuttavia, se un'istruzione alloca per y fosse già presente nella symbol
-   //    table (nel caso y sia un parametro) bisognerebbe "rimuoverla" temporaneamente e re-inserirla
-   //    all'uscita del blocco. Questo è ciò che viene fatto dal presente codice, che utilizza
-   //    al riguardo il vettore di appoggio "AllocaTmp" (che naturalmente è un vettore di
-   //    di (puntatori ad) istruzioni di allocazione
-   std::vector<AllocaInst*> AllocaTmp;
-   for (int i=0, e=Def.size(); i<e; i++) {
-      // Per ogni definizione di variabile si genera il corrispondente codice che
-      // (in questo caso) non restituisce un registro SSA ma l'istruzione di allocazione
-      AllocaInst *boundval = Def[i]->codegen(drv);
-      if (!boundval) 
-         return nullptr;
-      // Viene temporaneamente rimossa la precedente istruzione di allocazione
-      // della stessa variabile (nome) e inserita quella corrente
-      AllocaTmp.push_back(drv.NamedValues[Def[i]->getName()]);
-      drv.NamedValues[Def[i]->getName()] = boundval;
-   };
-   // Ora (ed è la parte più "facile" da capire) viene generato il codice che
-   // valuta l'espressione. Eventuali riferimenti a variabili vengono risolti
-   // nella symbol table appena modificata
-   Value *blockvalue = Val->codegen(drv);
-      if (!blockvalue)
-         return nullptr;
-   // Prima di uscire dal blocco, si ripristina lo scope esterno al costrutto
-   for (int i=0, e=Def.size(); i<e; i++) {
-        drv.NamedValues[Def[i]->getName()] = AllocaTmp[i];
-   };
-   // Il valore del costrutto/espressione var è ovviamente il valore (il registro SSA)
-   // restituito dal codice di valutazione dell'espressione
-   return blockvalue;
-};
 
 /************************* Var binding Tree *************************/
 VarBindingAST::VarBindingAST(const std::string Name, ExprAST* Val):
@@ -336,14 +288,22 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    // l'allocazione viene fatta tramite l'utility CreateEntryBlockAlloca
    Function *fun = builder->GetInsertBlock()->getParent();
    // Ora viene generato il codice che definisce il valore della variabile
-   Value *BoundVal = Val->codegen(drv);
-   if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
-      return nullptr;
+   Value *BoundVal;
+
+   if (Val){
+     BoundVal = Val->codegen(drv);
+      if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
+        return nullptr;
+   }
+  
    // Se tutto ok, si genera l'struzione che alloca memoria per la varibile ...
    AllocaInst *Alloca = CreateEntryBlockAlloca(fun, Name);
    // ... e si genera l'istruzione per memorizzarvi il valore dell'espressione,
    // ovvero il contenuto del registro BoundVal
-   builder->CreateStore(BoundVal, Alloca);
+   if (Val){
+     builder->CreateStore(BoundVal, Alloca);
+   }
+   
    
    // L'istruzione di allocazione (che include il registro "puntatore" all'area di memoria
    // allocata) viene restituita per essere inserita nella symbol table
@@ -368,7 +328,7 @@ void PrototypeAST::noemit() {
    emitcode = false; 
 };
 
-Function *PrototypeAST::codegen(driver& drv) {
+Function *PrototypeAST::codegen(driver &drv) {
   // Costruisce una struttura, qui chiamata FT, che rappresenta il "tipo" di una
   // funzione. Con ciò si intende a sua volta una coppia composta dal tipo
   // del risultato (valore di ritorno) e da un vettore che contiene il tipo di tutti
@@ -408,9 +368,9 @@ Function *PrototypeAST::codegen(driver& drv) {
 }
 
 /************************* Function Tree **************************/
-FunctionAST::FunctionAST(PrototypeAST* Proto, ExprAST* Body): Proto(Proto), Body(Body) {};
+FunctionAST::FunctionAST(PrototypeAST *Proto, StatementAST *Body): Proto(Proto), Body(Body) {};
 
-Function *FunctionAST::codegen(driver& drv) {
+Function *FunctionAST::codegen(driver &drv) {
   // Verifica che la funzione non sia già presente nel modulo, cioò che non
   // si tenti una "doppia definizion"
   Function *function = 
@@ -474,14 +434,147 @@ Function *FunctionAST::codegen(driver& drv) {
   return nullptr;
 };
 
+//fbfbhrbhfbvhbv
+
+/************************* Global Tree *************************/
+GlobalVarAST::GlobalVarAST(const std::string Name):
+  Name(Name) {}; 
+
+//const std::string& GlobalVarAST::getName(){ return Name; };
+/*
+module->getNamedGlobal(<Name>)che recupera (se presente nel modulo) la variabile globale identicata dal nome <Name>
+
+module->getFunction(<Name>)che recupera (se presente nel modulo) la funzione identicata dal nome <Name>
+
+*/
 
 
-Value *GlobalVarAST::codegen(driver& drv) {
-  Type *globalVarType = Type::getDoubleTy(*context);
+GlobalVariable *GlobalVarAST::codegen(driver &drv) {
 
-  auto gVariable = new GlobalVariable(*module, globalVarType, false, GlobalValue::CommonLinkage, ConstantFP::getNullValue(Type::getDoubleTy(*context)), Name);
+  //auto module = new Module("Module", *context);
+  //auto type = IntegerType::getInt32Ty(*context);
 
+  //auto constantInt = ConstantInt::getIntegerValue(type, APInt(32, 42));
+  GlobalVariable *gVariable = new GlobalVariable(
+    *module, 
+    Type::getDoubleTy(*context), 
+    false, 
+    GlobalValue::CommonLinkage, 
+    ConstantFP::get(Type::getDoubleTy(*context), 0.0), 
+    Name
+  );
+  
   gVariable->print(errs());
+  fprintf(stderr, "\n");
 
   return gVariable;
+
+  
+  //@a = global i32, align 8
+
+  //return builder->CreateStore(gVariable->getAllocatedType(), gVariable, Name.c_str()); 
+
+  //if (module->getNamedGlobal(Name))
+    //return LogErrorV("Variabile " + Name + " già definita globalmente");
+
+};
+
+//*************************Assignment AST*************************************
+
+AssignmentAST::AssignmentAST(const std::string Name, ExprAST *assignmentEXPR): Name(Name), assignmentEXPR(assignmentEXPR) {}
+
+const std::string &AssignmentAST::getName() const { return Name; };
+
+Value *AssignmentAST::codegen(driver &drv){
+  //un assignment è id = exp quindi prima prendo il nome poi assignmentEXPR è gia gestita quindi 
+  //se non fallisce il controllo io aggiorno il valore 
+  Value *A = drv.NamedValues[Name];
+  if (!A){
+    A = module->getNamedGlobal(Name);
+    if (!A){
+      return LogErrorV("Variabile" + Name + "non definita");
+    }
+  }
+    //caso la variabile esiste passo e gestisco la parte destra (RHS) chiamando la codegen 
+    Value *RHS = assignmentEXPR->codegen(drv);
+
+    //se fallisco la generazione del codice do puntatore nullo (es. x = 2 + "aaa")
+    if (!RHS){
+      return nullptr;
+    }
+
+    //aggiorno il valore della variabile n
+    builder->CreateStore(RHS, A);
+    return RHS;
+  
+}
+
+
+//********************Block AST*************************************************
+
+BlockAST::BlockAST(std::vector<VarBindingAST*> definition, std::vector<StatementAST*> statements): 
+  definition(std::move(definition)), statements(std::move(statements)) {};
+
+BlockAST::BlockAST(std::vector<StatementAST*> statements): 
+  statements(std::move(statements)) {};
+
+
+Value *BlockAST::codegen(driver& drv){
+  //posso avere un blocco di statements oppure uno statement ripetuto da un altro statement
+  //prima cosa guardo la funzione che li contiene
+
+
+  // Un blocco è un'espressione preceduta dalla definizione di una o più variabili locali.
+   // Le definizioni sono opzionali e tuttavia necessarie perché l'uso di un blocco
+   // abbia senso. Ad ogni variabile deve essere associato il valore di una costante o il valore di
+   // un'espressione. Nell'espressione, arbitraria, possono chiaramente comparire simboli di
+   // variabile. Al riguardo, la gestione dello scope (ovvero delle regole di visibilità)
+   // è implementata nel modo seguente, in cui, come esempio, consideremo la definzione: var y = x+1
+   // 1) Viene dapprima generato il codice per valutare l'espressione x+1.
+   //    L'area di memoria da cui "prelevare" il valore di x è scritta in un
+   //    registro SSA che è parte della (rappresentazione interna della) istruzione alloca usata
+   //    per allocare la memoria corrispondente e che è registrata nella symbol table
+   //    Per i parametri della funzione, l'istruzione di allocazione viene generata (come già sappiamo)
+   //    dalla chiamata di codegen in FunctionAST. Per le variabili locali viene generata nel presente
+   //    contesto. Si noti, di passaggio, che tutte le istruzioni di allocazione verranno poi emesse
+   //    nell'entry block, in ordine cronologico rovesciato (rispetto alla generazione). Questo perché
+   //    la routine di utilità (CreateEntryBlockAlloca) genera sempre all'inizio del blocco.
+   // 2) Ritornando all'esempio, bisogna ora gestire l'assegnamento ad y gestendone la visibilità. 
+   //    Come prima cosa viene generata l'istruzione alloca per y. 
+   //    Questa deve essere inserita nella symbol table per futuri riferimenti ad y
+   //    all'interno del blocco. Tuttavia, se un'istruzione alloca per y fosse già presente nella symbol
+   //    table (nel caso y sia un parametro) bisognerebbe "rimuoverla" temporaneamente e re-inserirla
+   //    all'uscita del blocco. Questo è ciò che viene fatto dal presente codice, che utilizza
+   //    al riguardo il vettore di appoggio "AllocaTmp" (che naturalmente è un vettore di
+   //    di (puntatori ad) istruzioni di allocazione
+
+   std::vector<AllocaInst*> AllocaTmp;
+   for (int i=0, e=definition.size(); i<e && !definition.empty(); i++) {
+      // Per ogni definizione di variabile si genera il corrispondente codice che
+      // (in questo caso) non restituisce un registro SSA ma l'istruzione di allocazione
+      AllocaInst *boundval = definition[i]->codegen(drv);
+      if (!boundval) 
+         return nullptr;
+      // Viene temporaneamente rimossa la precedente istruzione di allocazione
+      // della stessa variabile (nome) e inserita quella corrente
+      AllocaTmp.push_back(drv.NamedValues[definition[i]->getName()]);
+      drv.NamedValues[definition[i]->getName()] = boundval;
+   };
+   // Ora (ed è la parte più "facile" da capire) viene generato il codice che
+   // valuta l'espressione. Eventuali riferimenti a variabili vengono risolti
+   // nella symbol table appena modificata
+  Value *blockvalue;
+  for (int i = 0; i < statements.size(); i++){
+    blockvalue = statements[i]->codegen(drv);
+    if (!blockvalue){
+      return nullptr;
+    }
+  }
+   // Prima di uscire dal blocco, si ripristina lo scope esterno al costrutto
+   for (int i=0, e=definition.size(); i<e && !definition.empty(); i++) {
+        drv.NamedValues[definition[i]->getName()] = AllocaTmp[i];
+   };
+   // Il valore del costrutto/espressione var è ovviamente il valore (il registro SSA)
+   // restituito dal codice di valutazione dell'espressione
+   return blockvalue;
 };

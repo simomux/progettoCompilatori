@@ -63,6 +63,9 @@ public:
   virtual Value *codegen(driver& drv) { return nullptr; };
 };
 
+class StatementAST : public RootAST {};
+
+
 // Classe che rappresenta la sequenza di statement
 class SeqAST : public RootAST {
 private:
@@ -75,7 +78,7 @@ public:
 };
 
 /// ExprAST - Classe base per tutti i nodi espressione
-class ExprAST : public RootAST {};
+class ExprAST : public StatementAST {};
 
 /// NumberExprAST - Classe per la rappresentazione di costanti numeriche
 class NumberExprAST : public ExprAST {
@@ -134,15 +137,6 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-/// BlockExprAST
-class BlockExprAST : public ExprAST {
-private:
-  std::vector<VarBindingAST*> Def;
-  ExprAST* Val;
-public:
-  BlockExprAST(std::vector<VarBindingAST*> Def, ExprAST* Val);
-  Value *codegen(driver& drv) override;
-}; 
 
 /// VarBindingAST
 class VarBindingAST: public RootAST {
@@ -176,12 +170,44 @@ public:
 class FunctionAST : public RootAST {
 private:
   PrototypeAST* Proto;
-  ExprAST* Body;
+  StatementAST* Body;
   bool external;
   
 public:
-  FunctionAST(PrototypeAST* Proto, ExprAST* Body);
+  FunctionAST(PrototypeAST* Proto, StatementAST* Body);
   Function *codegen(driver& drv) override;
 };
+
+class GlobalVarAST : public RootAST {
+private:
+  const std::string Name;
+  
+public:
+  GlobalVarAST(const std::string Name);
+  //const std::string& getName();
+  GlobalVariable *codegen(driver& drv) override;
+};
+
+
+class BlockAST : public StatementAST {
+  private:
+    std::vector<VarBindingAST*> definition;
+    std::vector<StatementAST*> statements;
+  public:
+    BlockAST(std::vector<VarBindingAST*> definition, std::vector<StatementAST*> statements);
+    BlockAST(std::vector<StatementAST*> statements);
+    Value *codegen(driver& drv) override;
+};
+
+class AssignmentAST : public StatementAST {
+  private:
+    const std::string Name;
+    ExprAST* assignmentEXPR;
+  public:
+    AssignmentAST(const std::string Name, ExprAST* assignmentEXPR);
+    const std::string& getName() const;
+    Value *codegen(driver& drv) override;
+};
+
 
 #endif // ! DRIVER_HH
