@@ -26,6 +26,8 @@
   class StatementAST;
   class BlockAST;
   class AssignmentAST;
+
+  // Level 2 grammar
 }
 
 
@@ -65,6 +67,9 @@
   DEF        "def"
   VAR        "var"
   GLOBAL     "global"
+  IF         "if"
+  ELSE       "else"
+  FOR        "for"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -92,6 +97,8 @@
 %type <AssignmentAST*> assignment;
 %type <ExprAST*> initexp
 %type <GlobalVarAST*> globalvar 
+
+// Level 2 grammar
 
 
 %%
@@ -148,6 +155,8 @@ stmts:
 stmt:
    assignment     { $$ = $1; } 
 |  block          { $$ = $1; }
+|  ifstmt         { $$ = $1; }
+|  forstmt        { $$ = $1; }
 |  exp            { $$ = $1; };
 
 
@@ -207,7 +216,24 @@ optexp:
 explist:
   exp                  { std::vector<ExprAST*> args; args.push_back($1); $$ = args;}
 | exp "," explist      { $3.insert($3.begin(), $1); $$ = $3; };
- 
+
+
+// Second level grammar
+
+ifstmt:
+  "if" "(" condexp ")" stmt                   { $3, $5, $7 }
+| "if" "(" condexp ")" stmt "else" stmt       { $3, $5, $7 };
+
+
+forstmt:
+  "for" "(" init ";" condexp ";" assignment ")" stmt      { $3, $5, $7, $9 }
+
+
+init:
+  binding         { $$ = $1; }
+| assignment      { $$ = $1; };
+
+
 %%
 
 void
