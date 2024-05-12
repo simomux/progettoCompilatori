@@ -178,6 +178,7 @@ public:
   Function *codegen(driver& drv) override;
 };
 
+// 1st level grammar
 class GlobalVarAST : public RootAST {
 private:
   const std::string Name;
@@ -209,5 +210,36 @@ class AssignmentAST : public StatementAST {
     Value *codegen(driver& drv) override;
 };
 
+
+// 2nd level grammar
+class IfStatementAST : public StatementAST {
+  private:
+    ExprAST* condition;
+    StatementAST* thenBlock;
+    StatementAST* elseBlock;
+  public:
+    IfStatementAST(ExprAST* condition, StatementAST* thenBlock);
+    IfStatementAST(ExprAST* condition, StatementAST* thenBlock, StatementAST* elseBlock);
+    Value *codegen(driver& drv) override;
+    
+};
+
+/*
+class initAST : public RootAST {
+  private:
+  public:
+};*/
+
+
+class ForStatementAST : public StatementAST {
+  /*private:
+    initAST* init;
+    BinaryExprAST* condition;
+    AssignmentAST* increment;
+    StatementAST* body;
+  public:
+    ForStatementAST(initAST* init, BinaryExprAST* condition, AssignmentAST* increment, StatementAST* body);
+    Value *codegen(driver& drv) override;*/
+};
 
 #endif // ! DRIVER_HH

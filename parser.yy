@@ -28,6 +28,9 @@
   class AssignmentAST;
 
   // Level 2 grammar
+  class IfStatementAST;
+  class initAST;
+  class ForStatementAST;
 }
 
 
@@ -99,7 +102,9 @@
 %type <GlobalVarAST*> globalvar 
 
 // Level 2 grammar
-
+%type <IfStatementAST*> ifstmt
+%type <ForStatementAST*> forstmt
+%type <initAST> init
 
 %%
 %start startsymb;
@@ -221,12 +226,12 @@ explist:
 // Second level grammar
 
 ifstmt:
-  "if" "(" condexp ")" stmt                   { $3, $5, $7 }
-| "if" "(" condexp ")" stmt "else" stmt       { $3, $5, $7 };
+  "if" "(" condexp ")" stmt                   { $$ = new IfStatementAST($3, $5); }
+| "if" "(" condexp ")" stmt "else" stmt       { $$ = new IfStatementAST($3, $5, $7); };
 
 
 forstmt:
-  "for" "(" init ";" condexp ";" assignment ")" stmt      { $3, $5, $7, $9 }
+//  "for" "(" init ";" condexp ";" assignment ")" stmt      { $$ = new ForStatementAST($3, $5, $7, $9); };
 
 
 init:

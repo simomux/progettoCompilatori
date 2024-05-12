@@ -578,3 +578,66 @@ Value *BlockAST::codegen(driver& drv){
    // restituito dal codice di valutazione dell'espressione
    return blockvalue;
 };
+
+
+
+//************************* IfStatementAST ***************************************
+IfStatementAST::IfStatementAST(ExprAST *condition, StatementAST *thenBlock):
+  condition(condition), thenBlock(thenBlock) {};
+
+
+IfStatementAST::IfStatementAST(ExprAST *condition, StatementAST *thenBlock, StatementAST *elseBlock):
+  condition(condition), thenBlock(thenBlock), elseBlock(elseBlock) {};
+
+
+Value *IfStatementAST::codegen(driver &drv) {
+  Value* conditionValue = condition->codegen(drv);
+  if (!conditionValue) {
+    return nullptr;
+  }
+  
+  Function *function = builder->GetInsertBlock()->getParent();
+  BasicBlock *thenBB =  BasicBlock::Create(*context, "thenBlock", function);
+
+  BasicBlock *elseBB = BasicBlock::Create(*context, "elseBlock");
+  BasicBlock *MergeBB = BasicBlock::Create(*context, "endcond");
+  
+  
+  builder->CreateCondBr(conditionValue, thenBB, elseBB);
+  
+  builder->SetInsertPoint(thenBB);
+  Value *thenValue = thenBlock->codegen(drv);
+  if (!thenValue)
+      return nullptr;
+  builder->CreateBr(MergeBB);
+  
+  thenBB = builder->GetInsertBlock();
+  function->insert(function->end(), elseBB);
+  
+
+  builder->SetInsertPoint(elseBB);
+  
+  Value *elseValue = elseBlock->codegen(drv);
+  if (!elseValue)
+      return nullptr;
+  builder->CreateBr(MergeBB);
+
+  elseBB = builder->GetInsertBlock();
+  function->insert(function->end(), MergeBB);
+  
+  builder->SetInsertPoint(MergeBB);
+
+  PHINode *phiNode = builder->CreatePHI(Type::getDoubleTy(*context), 2, "condval");
+  phiNode->addIncoming(thenValue, thenBB);
+  phiNode->addIncoming(elseValue, elseBB);
+  return phiNode;
+};
+
+
+//************************* ForStatementAST ***************************************
+/*ForStatementAST(initAST* init, BinaryExprAST* condition, AssignmentAST* increment, StatementAST* body):
+  init(init), condition(condition), increment(increment), body(body) {};
+
+Value *ForStatementAST::codegen(driver &drv) {
+  return nullptr;
+};*/
