@@ -8,3 +8,4 @@ scanner.cpp
 README
 .vscode
 test_progetto
+*.output

@@ -29,8 +29,8 @@
 
   // Level 2 grammar
   class IfStatementAST;
-  class initAST;
   class ForStatementAST;
+  class InitAST;
 }
 
 
@@ -73,6 +73,8 @@
   IF         "if"
   ELSE       "else"
   FOR        "for"
+  DPLUS      "++"
+  DMINUS     "--"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -104,7 +106,7 @@
 // Level 2 grammar
 %type <IfStatementAST*> ifstmt
 %type <ForStatementAST*> forstmt
-%type <initAST> init
+%type <InitAST*> init
 
 %%
 %start startsymb;
@@ -116,7 +118,7 @@ program                 { drv.root = $1; }
 
 program:
   %empty                { $$ = new SeqAST(nullptr,nullptr); }
-|  top ";" program      { $$ = new SeqAST($1,$3); };
+| top ";" program      { $$ = new SeqAST($1,$3); };
 
 
 top:
@@ -153,36 +155,41 @@ idseq:
 
 
 stmts:
-   stmt			      { std::vector<StatementAST*> args; args.push_back($1); $$ = args; }
-|  stmt ";" stmts	{ $3.insert($3.begin(), $1); $$ = $3; };
+  stmt			      { std::vector<StatementAST*> args; args.push_back($1); $$ = args; }
+| stmt ";" stmts	{ $3.insert($3.begin(), $1); $$ = $3; };
 
 
 stmt:
-   assignment     { $$ = $1; } 
-|  block          { $$ = $1; }
-|  ifstmt         { $$ = $1; }
-|  forstmt        { $$ = $1; }
-|  exp            { $$ = $1; };
+  assignment     { $$ = $1; } 
+| block          { $$ = $1; }
+| ifstmt         { $$ = $1; }
+| forstmt        { $$ = $1; }
+| exp            { $$ = $1; };
 
 
 assignment:
-   "id" "=" exp   { $$ = new AssignmentAST($1, $3);}; 
+   "id" "=" exp   { $$ = new AssignmentAST($1, $3); }
+|  "id" "++"      { $$ = new AssignmentAST($1, new BinaryExprAST('+', new VariableExprAST($1), new NumberExprAST(1))); }
+|  "++" "id"      { $$ = new AssignmentAST($2, new BinaryExprAST('+', new VariableExprAST($2), new NumberExprAST(1))); }
+|  "id" "--"      { $$ = new AssignmentAST($1, new BinaryExprAST('-', new VariableExprAST($1), new NumberExprAST(1))); }
+|  "--" "id"      { $$ = new AssignmentAST($2, new BinaryExprAST('-', new VariableExprAST($2), new NumberExprAST(1))); };
 
 
 block:
-   "{" stmts "}"              { $$ = new BlockAST($2); } 
-|  "{" vardefs ";" stmts "}"  { $$ = new BlockAST($2,$4); };
+  "{" stmts "}"              { $$ = new BlockAST($2); } 
+| "{" vardefs ";" stmts "}"  { $$ = new BlockAST($2,$4); };
 
 
 exp:
-  exp "+" exp           { $$ = new BinaryExprAST('+',$1,$3); }
-| exp "-" exp           { $$ = new BinaryExprAST('-',$1,$3); }
-| exp "*" exp           { $$ = new BinaryExprAST('*',$1,$3); }
-| exp "/" exp           { $$ = new BinaryExprAST('/',$1,$3); }
+  exp "+" exp           { $$ = new BinaryExprAST('+', $1, $3); }
+| exp "-" exp           { $$ = new BinaryExprAST('-', $1, $3); }
+| exp "*" exp           { $$ = new BinaryExprAST('*', $1, $3); }
+| exp "/" exp           { $$ = new BinaryExprAST('/', $1, $3); }
 | idexp                 { $$ = $1; }
 | "(" exp ")"           { $$ = $2; }
 | "number"              { $$ = new NumberExprAST($1); }
-| expif                 { $$ = $1; };
+| expif                 { $$ = $1; }
+| "-" exp               { $$ = new BinaryExprAST('-', new NumberExprAST(0), $2); };
 
 
 initexp:
@@ -225,13 +232,15 @@ explist:
 
 // Second level grammar
 
+%right ")" "else";
+
 ifstmt:
   "if" "(" condexp ")" stmt                   { $$ = new IfStatementAST($3, $5); }
 | "if" "(" condexp ")" stmt "else" stmt       { $$ = new IfStatementAST($3, $5, $7); };
 
 
 forstmt:
-//  "for" "(" init ";" condexp ";" assignment ")" stmt      { $$ = new ForStatementAST($3, $5, $7, $9); };
+  "for" "(" init ";" condexp ";" assignment ")" stmt      { $$ = new ForStatementAST($3, $5, $7, $9); };
 
 
 init:

@@ -17,17 +17,12 @@ num     {fpnum}|{fixnum}
 blank   [ \t]
 
 %{
-  // Codice eseguito ad ogni match con una regexp
   # define YY_USER_ACTION loc.columns(yyleng);
 %}
 %%
 %{
-  // La location è memorizzata nel driver ma è utile
-  // potervi fare riferimento in modo più succinto
-  // con una variabile locale
   yy::location& loc = drv.location;
   
-  // Codice eseguito ogni volta che yylex viene chiamata
   loc.step ();
 %}
 {blank}+   loc.step ();
@@ -44,10 +39,12 @@ blank   [ \t]
 "?"      return yy::parser::make_QMARK     (loc);
 ":"      return yy::parser::make_COLON     (loc);
 "<"      return yy::parser::make_LT        (loc);
-"=="      return yy::parser::make_EQ       (loc);
+"=="     return yy::parser::make_EQ        (loc);
 "="      return yy::parser::make_ASSIGN    (loc);
 "{"      return yy::parser::make_LBRACE    (loc);
 "}"      return yy::parser::make_RBRACE    (loc);
+"++"     return yy::parser::make_DPLUS     (loc);
+"--"     return yy::parser::make_DMINUS    (loc);
 
 {num}    { errno = 0;
            double n = strtod(yytext, NULL);
