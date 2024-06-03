@@ -20,13 +20,13 @@ startsymb:
 
 program:
 	% empty
-| 	top ";" program % left ":";
+| top ";" program % left ":";
 
 top:
 	% empty
-| 	definition
-| 	external
-| 	globalvar
+| definition
+|	external
+| globalvar
 
 definition:
 	"def" proto block
@@ -63,35 +63,35 @@ assignment
 
 block:
 	"{" stmts "}"
-| 	"{" vardefs ";" stmts "}"
+|	"{" vardefs ";" stmts "}"
 
 vardefs:
 	binding
-| 	vardefs ";" binding
+| vardefs ";" binding
 
 binding:
 	"var" "id" initexp
 
 exp:
 	exp "+" exp
-| 	exp " -" exp
-| 	exp "*" exp
-| 	exp "/" exp
-| 	idexp
-| 	"(" exp ")"
-| 	"number"
-| 	expif
+| exp " -" exp
+| exp "*" exp
+| exp "/" exp
+| idexp
+| "(" exp ")"
+| "number"
+| expif
 
 initexp:
 	%empty
-| 	"=" exp
+| "=" exp
 
 expif:
  	condexp "?" exp ":" exp
 
 condexp:
 	exp "<" exp
-| 	exp "==" exp
+|	exp "==" exp
 
 idexp:
 	"id"
@@ -103,7 +103,7 @@ optexp:
 
 explist:
 	exp
-| 	exp "," explist
+| exp "," explist
 ```
 
 </details>
@@ -111,61 +111,61 @@ explist:
 
 ### Second level grammar
 
-Implements rules and logic for if construct, for loops and initializations.
+Implements rules and logic for `if` construct, `for` loops and initializations.
 
 ```bison
 stmt:
 	assignment
-| 	block
-| 	ifstmt
-| 	forstmt
-| 	exp
+| block
+| ifstmt
+| forstmt
+| exp
 
 ifstmt:
 	"if" "(" condexp ")" stmt
-| 	"if" "(" condexp ")" stmt " else " stmt
+| "if" "(" condexp ")" stmt " else " stmt
 
 forstmt:
 	"for" "(" init ";" condexp ";" assignment ")" stmt
 
 init:
 	binding
-| 	assignment
+| assignment
 ```
 
 ### Third level grammar
 
-...
+Implements boolean operators `and`, `or` and `not` for consecutive conditional expressions.
 
 ```bison
 condexp:
-relexp
-| 	relexp "and" condexp
-| 	relexp "or" condexp
-| 	"not" condexp
-| 	"(" condexp ")"
+	relexp
+| relexp "and" condexp
+| relexp "or" condexp
+| "not" condexp
+| "(" condexp ")"
 
 relexp:
 	exp "<" exp
-| 	exp "==" exp
+| exp "==" exp
 ```
 
 ### Fourth level grammar
 
-...
+TODO
 
 ```bison
 binding:
 	"var" "id" initexp
-| 	"var" "id" "[" "number" "]"
-| 	"var" "id" "[" "number" "]" "=" "{" explist "}"
+| "var" "id" "[" "number" "]"
+| "var" "id" "[" "number" "]" "=" "{" explist "}"
 
 idexp:
 	"id"
-| 	"id" "(" optexp ")"
-| 	"id" "[" exp "]"
+|	"id" "(" optexp ")"
+|	"id" "[" exp "]"
 
 assignment:
 	"id" "=" exp
-| 	"id" "[" exp "]" "=" exp
+|	"id" "[" exp "]" "=" exp
 ```
