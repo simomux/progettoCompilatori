@@ -75,6 +75,9 @@
   FOR        "for"
   DPLUS      "++"
   DMINUS     "--"
+  AND        "and"
+  OR         "or"
+  NOT        "not"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -107,6 +110,9 @@
 %type <IfStatementAST*> ifstmt
 %type <ForStatementAST*> forstmt
 %type <InitAST*> init
+
+// Level 3 grammar
+%type <ExprAST*> relexp
 
 %%
 %start startsymb;
@@ -148,7 +154,7 @@ idseq:
 | "id" idseq            { $2.insert($2.begin(),$1); $$ = $2; };
 
 
-%left ":";
+%left ":" "?";
 %left "<" "==";
 %left "+" "-";
 %left "*" "/";
@@ -169,10 +175,10 @@ stmt:
 
 assignment:
    "id" "=" exp   { $$ = new AssignmentAST($1, $3); }
-|  "id" "++"      { $$ = new AssignmentAST($1, new BinaryExprAST('+', new VariableExprAST($1), new NumberExprAST(1))); }
-|  "++" "id"      { $$ = new AssignmentAST($2, new BinaryExprAST('+', new VariableExprAST($2), new NumberExprAST(1))); }
-|  "id" "--"      { $$ = new AssignmentAST($1, new BinaryExprAST('-', new VariableExprAST($1), new NumberExprAST(1))); }
-|  "--" "id"      { $$ = new AssignmentAST($2, new BinaryExprAST('-', new VariableExprAST($2), new NumberExprAST(1))); };
+|  "id" "++"      { $$ = new AssignmentAST($1, new BinaryExprAST(new VariableExprAST($1), '+', new NumberExprAST(1))); }
+|  "++" "id"      { $$ = new AssignmentAST($2, new BinaryExprAST(new VariableExprAST($2), '+', new NumberExprAST(1))); }
+|  "id" "--"      { $$ = new AssignmentAST($1, new BinaryExprAST(new VariableExprAST($1), '-', new NumberExprAST(1))); }
+|  "--" "id"      { $$ = new AssignmentAST($2, new BinaryExprAST(new VariableExprAST($2), '-', new NumberExprAST(1))); };
 
 
 block:
@@ -181,15 +187,15 @@ block:
 
 
 exp:
-  exp "+" exp           { $$ = new BinaryExprAST('+', $1, $3); }
-| exp "-" exp           { $$ = new BinaryExprAST('-', $1, $3); }
-| exp "*" exp           { $$ = new BinaryExprAST('*', $1, $3); }
-| exp "/" exp           { $$ = new BinaryExprAST('/', $1, $3); }
+  exp "+" exp           { $$ = new BinaryExprAST($1, '+', $3); }
+| exp "-" exp           { $$ = new BinaryExprAST($1, '-', $3); }
+| exp "*" exp           { $$ = new BinaryExprAST($1, '*', $3); }
+| exp "/" exp           { $$ = new BinaryExprAST($1, '/', $3); }
 | idexp                 { $$ = $1; }
 | "(" exp ")"           { $$ = $2; }
 | "number"              { $$ = new NumberExprAST($1); }
 | expif                 { $$ = $1; }
-| "-" exp               { $$ = new BinaryExprAST('-', new NumberExprAST(0), $2); };
+| "-" exp               { $$ = new BinaryExprAST(new NumberExprAST(0), '-', $2); };
 
 
 initexp:
@@ -208,11 +214,6 @@ binding:
 
 expif:
   condexp "?" exp ":" exp { $$ = new IfExprAST($1,$3,$5); };
-
-
-condexp:
-  exp "<" exp           { $$ = new BinaryExprAST('<',$1,$3); }
-| exp "==" exp          { $$ = new BinaryExprAST('=',$1,$3); };
 
 
 idexp:
@@ -247,6 +248,23 @@ init:
   binding         { $$ = $1; }
 | assignment      { $$ = $1; };
 
+
+// Third level grammar
+
+// Regole per ordine
+%left "not";
+%left "and" "or";
+
+condexp:
+  relexp                  { $$ = $1; }
+| relexp "and" condexp    { $$ = new BinaryExprAST($1, 'A', $3); }
+| relexp "or" condexp     { $$ = new BinaryExprAST($1, 'O', $3); }
+| "not" condexp           { $$ = new BinaryExprAST(nullptr, 'N', $2); }
+| "(" condexp ")"         { $$ = $2; };
+
+relexp:
+  exp "<" exp             { $$ = new BinaryExprAST($1, '<', $3); }
+| exp "==" exp            { $$ = new BinaryExprAST($1, '=', $3); };
 
 %%
 

@@ -83,13 +83,17 @@ Value *VariableExprAST::codegen(driver& drv) {
 }
 
 //******************** Binary Expression Tree **********************
-BinaryExprAST::BinaryExprAST(char Op, ExprAST* LHS, ExprAST* RHS): Op(Op), LHS(LHS), RHS(RHS) {}
+BinaryExprAST::BinaryExprAST(ExprAST* LHS, char Op, ExprAST* RHS): LHS(LHS), Op(Op), RHS(RHS) {}
 
 Value *BinaryExprAST::codegen(driver& drv) {
-  Value *L = LHS->codegen(drv);
   Value *R = RHS->codegen(drv);
-  if (!L || !R) 
-    return nullptr;
+
+  if (Op == 'N' && R) return builder->CreateNot(R, "nottest");
+
+  Value *L = LHS->codegen(drv);
+
+  if (!L || !R)  return nullptr;
+
   switch (Op) {
     case '+':
       return builder->CreateFAdd(L, R, "addres");
@@ -103,6 +107,10 @@ Value *BinaryExprAST::codegen(driver& drv) {
       return builder->CreateFCmpULT(L, R, "lttest");
     case '=':
       return builder->CreateFCmpUEQ(L, R, "eqtest");
+    case 'A':
+      return builder->CreateLogicalAnd(L, R, "andtest");
+    case 'O':
+      return builder->CreateLogicalOr(L, R, "ortest");
     default:  
       std::cout << Op << std::endl;
       return LogErrorV("Operatore binario non supportato");
@@ -128,8 +136,7 @@ Value* CallExprAST::codegen(driver& drv) {
   std::vector<Value *> ArgsV;
   for (auto arg : Args) {
     ArgsV.push_back(arg->codegen(drv));
-    if (!ArgsV.back())
-      return nullptr;
+    if (!ArgsV.back()) return nullptr;
   }
   return builder->CreateCall(CalleeF, ArgsV, "calltmp");
 }
@@ -139,8 +146,8 @@ IfExprAST::IfExprAST(ExprAST* Cond, ExprAST* TrueExp, ExprAST* FalseExp): Cond(C
    
 Value* IfExprAST::codegen(driver& drv) {
   Value* CondV = Cond->codegen(drv);
-  if (!CondV)
-    return nullptr;
+
+  if (!CondV) return nullptr;
   
   Function *function = builder->GetInsertBlock()->getParent();
   BasicBlock *TrueBB =  BasicBlock::Create(*context, "trueexp", function);
@@ -152,8 +159,9 @@ Value* IfExprAST::codegen(driver& drv) {
   
   builder->SetInsertPoint(TrueBB);
   Value *TrueV = TrueExp->codegen(drv);
-  if (!TrueV)
-    return nullptr;
+
+  if (!TrueV) return nullptr;
+
   builder->CreateBr(MergeBB);
   
   TrueBB = builder->GetInsertBlock();
@@ -163,8 +171,7 @@ Value* IfExprAST::codegen(driver& drv) {
   
   Value *FalseV = FalseExp->codegen(drv);
 
-  if (!FalseV)
-    return nullptr;
+  if (!FalseV) return nullptr;
 
   builder->CreateBr(MergeBB);
   
@@ -192,8 +199,7 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
 
   if (Val) {
     BoundVal = Val->codegen(drv);
-    if (!BoundVal)
-      return nullptr;
+    if (!BoundVal) return nullptr;
   }
 
   AllocaInst *Alloca = CreateEntryBlockAlloca(fun, Name);
@@ -246,10 +252,9 @@ Function *FunctionAST::codegen(driver &drv) {
   Function *function = module->getFunction(std::get<std::string>(Proto->getLexVal()));
   if (!function)
     function = Proto->codegen(drv);
-  else
-    return nullptr;
-  if (!function)
-    return nullptr;  
+  else return nullptr;
+
+  if (!function) return nullptr;  
 
   BasicBlock *BB = BasicBlock::Create(*context, "entry", function);
   builder->SetInsertPoint(BB);
@@ -311,9 +316,7 @@ Value *AssignmentAST::codegen(driver &drv){
   }
   Value *RHS = assignmentEXPR->codegen(drv);
 
-  if (!RHS){
-    return nullptr;
-  }
+  if (!RHS) return nullptr;
 
   builder->CreateStore(RHS, A);
   return RHS;
@@ -329,17 +332,17 @@ Value *BlockAST::codegen(driver& drv){
   std::vector<AllocaInst*> AllocaTmp;
   for (int i=0, e=definition.size(); i<e && !definition.empty(); i++) {
     AllocaInst *boundval = definition[i]->codegen(drv);
-    if (!boundval) 
-      return nullptr;
+
+    if (!boundval) return nullptr;
+    
     AllocaTmp.push_back(drv.NamedValues[definition[i]->getName()]);
     drv.NamedValues[definition[i]->getName()] = boundval;
   }
   Value *blockvalue;
   for (int i = 0; i < statements.size(); i++){
     blockvalue = statements[i]->codegen(drv);
-    if (!blockvalue){
-      return nullptr;
-    }
+
+    if (!blockvalue) return nullptr;
   }
   for (int i=0, e=definition.size(); i<e && !definition.empty(); i++) {
     drv.NamedValues[definition[i]->getName()] = AllocaTmp[i];
@@ -368,7 +371,9 @@ Value *IfStatementAST::codegen(driver &drv) {
 
   builder->SetInsertPoint(thenBB);
   Value *thenValue = thenBlock->codegen(drv);
+  
   if (!thenValue) return nullptr;
+
   builder->CreateBr(MergeBB);
 
   thenBB = builder->GetInsertBlock();

@@ -102,7 +102,7 @@ private:
   ExprAST* RHS;
 
 public:
-  BinaryExprAST(char Op, ExprAST* LHS, ExprAST* RHS);
+  BinaryExprAST(ExprAST* LHS, char Op, ExprAST* RHS);
   Value *codegen(driver& drv) override;
 };
 
