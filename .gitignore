@@ -1,9 +1,0 @@
-.DS_Store
-*.o
-kcomp 
-esempi*/
-parser.cpp
-parser.hpp
-scanner.cpp
-.vscode
-*.output

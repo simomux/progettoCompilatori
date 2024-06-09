@@ -25,30 +25,38 @@
 
 using namespace llvm;
 
-
+// Dichiarazione del prototipo yylex per Flex
+// Flex va proprio a cercare YY_DECL perché
+// deve espanderla (usando M4) nel punto appropriato
 # define YY_DECL \
   yy::parser::symbol_type yylex (driver& drv) 
-  YY_DECL;
+// Per il parser è sufficiente una forward declaration
+YY_DECL;
 
+// Classe che organizza e gestisce il processo di compilazione
 class driver {
 public:
   driver();
-  std::map<std::string, AllocaInst*> NamedValues;
-  RootAST* root;
+  std::map<std::string, AllocaInst*> NamedValues; // Tabella associativa in cui ogni 
+            // chiave x è una variabile e il cui corrispondente valore è un'istruzione 
+            // che alloca uno spazio di memoria della dimensione necessaria per 
+            // memorizzare un variabile del tipo di x (nel nostro caso solo double)
+  RootAST* root;      // A fine parsing "punta" alla radice dell'AST
   int parse (const std::string& f);
   std::string file;
-  bool trace_parsing;
-  void scan_begin ();
-  void scan_end ();
-  bool trace_scanning;
-  yy::location location;
+  bool trace_parsing; // Abilita le tracce di debug el parser
+  void scan_begin (); // Implementata nello scanner
+  void scan_end ();   // Implementata nello scanner
+  bool trace_scanning;// Abilita le tracce di debug nello scanner
+  yy::location location; // Utillizata dallo scannar per localizzare i token
   void codegen();
 };
 
 typedef std::variant<std::string,double> lexval;
 const lexval NONE = 0.0;
 
-
+// Classe base dell'intera gerarchia di classi che rappresentano
+// gli elementi del programma
 class RootAST {
 public:
   virtual ~RootAST() {};
@@ -58,7 +66,7 @@ public:
 
 class StatementAST : public RootAST {};
 
-
+// Classe che rappresenta la sequenza di statement
 class SeqAST : public RootAST {
 private:
   RootAST* first;
@@ -69,10 +77,10 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-
+// ExprAST - Classe base per tutti i nodi espressione
 class ExprAST : public StatementAST {};
 
-
+// NumberExprAST - Classe per la rappresentazione di costanti numeriche
 class NumberExprAST : public ExprAST {
 private:
   double Val;
@@ -83,7 +91,7 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-
+// VariableExprAST - Classe per la rappresentazione di riferimenti a variabili
 class VariableExprAST : public ExprAST {
 private:
   std::string Name;
@@ -94,7 +102,7 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-
+// BinaryExprAST - Classe per la rappresentazione di operatori binari
 class BinaryExprAST : public ExprAST {
 private:
   char Op;
@@ -106,7 +114,7 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-
+// CallExprAST - Classe per la rappresentazione di chiamate di funzione
 class CallExprAST : public ExprAST {
 private:
   std::string Callee;
@@ -118,7 +126,7 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-
+// IfExprAST
 class IfExprAST : public ExprAST {
 private:
   ExprAST* Cond;
@@ -129,7 +137,7 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-
+// BlockExprAST
 class InitAST : public StatementAST {
   private:
     std::string Name;
@@ -137,7 +145,7 @@ class InitAST : public StatementAST {
     virtual const std::string& getName() const {return Name;};
 };
 
-
+// VarBindingAST
 class VarBindingAST: public InitAST {
 private:
   const std::string Name;
@@ -148,7 +156,9 @@ public:
   const std::string& getName() const override;
 };
 
-
+// PrototypeAST - Classe per la rappresentazione dei prototipi di funzione
+// (nome, numero e nome dei parametri; in questo caso il tipo è implicito
+// perché unico)
 class PrototypeAST : public RootAST {
 private:
   std::string Name;
@@ -163,7 +173,7 @@ public:
   void noemit();
 };
 
-
+// FunctionAST - Classe che rappresenta la definizione di una funzione
 class FunctionAST : public RootAST {
 private:
   PrototypeAST* Proto;
@@ -184,7 +194,7 @@ private:
 public:
   GlobalVarAST(const std::string Name);
   GlobalVariable *codegen(driver& drv) override;
-};
+};  
 
 
 class BlockAST : public StatementAST {

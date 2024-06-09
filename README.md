@@ -4,11 +4,39 @@
 
 Create a front-end compiler for Kaleidoscope extending the skeleton template from a modified version of the code from [My First Language Frontend with LLVM Tutorial](https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/index.html).
 
-The assignment is divided in 4 parts, each one giving you a grammar and reuqiring the implementation of it and of the necessaries AST nodes.
+The assignment is divided in 4 parts, each one giving you a grammar and requiring the implementation of it and of the necessaries AST nodes.
+
+## Requirements
+
+LLVM-16 is required for the project to run, to install check [this](https://releases.llvm.org/download.html).
+
+Once you have installed the correct version of LLVM you can run the front-end.
+
+## How to run
+
+Simply compile using:
+```bash
+make all
+```
+This will compile each necessary file for the project to run.
+
+## How to test
+To test the front-end various files are present in `test_progetto`.
+
+Simply run:
+```bash
+cd test_progetto && make all
+```
+
+The command should create and executable for each file, according to the level of grammar that has been developed.
+To check which files are necessaries for which level of grammar consult `test_progetto/README`.
+
+
+## Grammar
 
 ### First level grammar
 
-Fisrt part requires to implement assignment logic for variables.
+Implements assignment logic, definition of global variables and modified `BlockExpAST` to allow for multiple statements inside a block.
 
 <details><summary>Grammar</summary>
 
@@ -111,7 +139,7 @@ explist:
 
 ### Second level grammar
 
-Implements rules and logic for `if` construct, `for` loops and initializations.
+Implements rules and logic for `if` construct, `for` loops.
 
 ```bison
 stmt:

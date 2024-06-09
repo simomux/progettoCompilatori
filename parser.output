@@ -1,0 +1,1641 @@
+State 97 conflicts: 1 shift/reduce
+State 98 conflicts: 1 shift/reduce
+
+
+Grammar
+
+    0 $accept: startsymb "end of file"
+
+    1 startsymb: program
+
+    2 program: ε
+    3        | top ";" program
+
+    4 top: ε
+    5    | definition
+    6    | external
+    7    | globalvar
+
+    8 definition: "def" proto block
+
+    9 external: "extern" proto
+
+   10 proto: "id" "(" idseq ")"
+
+   11 globalvar: "global" "id"
+
+   12 idseq: ε
+   13      | "id" idseq
+
+   14 stmts: stmt
+   15      | stmt ";" stmts
+
+   16 stmt: assignment
+   17     | block
+   18     | ifstmt
+   19     | forstmt
+   20     | exp
+
+   21 assignment: "id" "=" exp
+   22           | "id" "++"
+   23           | "++" "id"
+   24           | "id" "--"
+   25           | "--" "id"
+
+   26 block: "{" stmts "}"
+   27      | "{" vardefs ";" stmts "}"
+
+   28 exp: exp "+" exp
+   29    | exp "-" exp
+   30    | exp "*" exp
+   31    | exp "/" exp
+   32    | idexp
+   33    | "(" exp ")"
+   34    | "number"
+   35    | expif
+   36    | "-" exp
+
+   37 initexp: ε
+   38        | "=" exp
+
+   39 vardefs: binding
+   40        | vardefs ";" binding
+
+   41 binding: "var" "id" initexp
+
+   42 expif: condexp "?" exp ":" exp
+
+   43 idexp: "id"
+   44      | "id" "(" optexp ")"
+
+   45 optexp: ε
+   46       | explist
+
+   47 explist: exp
+   48        | exp "," explist
+
+   49 ifstmt: "if" "(" condexp ")" stmt
+   50       | "if" "(" condexp ")" stmt "else" stmt
+
+   51 forstmt: "for" "(" init ";" condexp ";" assignment ")" stmt
+
+   52 init: binding
+   53     | assignment
+
+   54 condexp: relexp
+   55        | relexp "and" condexp
+   56        | relexp "or" condexp
+   57        | "not" condexp
+   58        | "(" condexp ")"
+
+   59 relexp: exp "<" exp
+   60       | exp "==" exp
+
+
+Terminals, with rules where they appear
+
+    "end of file" (0) 0
+    error (256)
+    ";" (258) 3 15 27 40 51
+    "," (259) 48
+    "-" (260) 29 36
+    "+" (261) 28
+    "*" (262) 30
+    "/" (263) 31
+    "(" (264) 10 33 44 49 50 51 58
+    ")" (265) 10 33 44 49 50 51 58
+    "?" (266) 42
+    ":" (267) 42
+    "<" (268) 59
+    "==" (269) 60
+    "=" (270) 21 38
+    "{" (271) 26 27
+    "}" (272) 26 27
+    "extern" (273) 9
+    "def" (274) 8
+    "var" (275) 41
+    "global" (276) 11
+    "if" (277) 49 50
+    "else" (278) 50
+    "for" (279) 51
+    "++" (280) 22 23
+    "--" (281) 24 25
+    "and" (282) 55
+    "or" (283) 56
+    "not" (284) 57
+    "id" <std::string> (285) 10 11 13 21 22 23 24 25 41 43 44
+    "number" <double> (286) 34
+
+
+Nonterminals, with rules where they appear
+
+    $accept (32)
+        on left: 0
+    startsymb (33)
+        on left: 1
+        on right: 0
+    program <RootAST*> (34)
+        on left: 2 3
+        on right: 1 3
+    top <RootAST*> (35)
+        on left: 4 5 6 7
+        on right: 3
+    definition <FunctionAST*> (36)
+        on left: 8
+        on right: 5
+    external <PrototypeAST*> (37)
+        on left: 9
+        on right: 6
+    proto <PrototypeAST*> (38)
+        on left: 10
+        on right: 8 9
+    globalvar <GlobalVarAST*> (39)
+        on left: 11
+        on right: 7
+    idseq <std::vector<std::string>> (40)
+        on left: 12 13
+        on right: 10 13
+    stmts <std::vector<StatementAST*>> (41)
+        on left: 14 15
+        on right: 15 26 27
+    stmt <StatementAST*> (42)
+        on left: 16 17 18 19 20
+        on right: 14 15 49 50 51
+    assignment <AssignmentAST*> (43)
+        on left: 21 22 23 24 25
+        on right: 16 51 53
+    block <BlockAST*> (44)
+        on left: 26 27
+        on right: 8 17
+    exp <ExprAST*> (45)
+        on left: 28 29 30 31 32 33 34 35 36
+        on right: 20 21 28 29 30 31 33 36 38 42 47 48 59 60
+    initexp <ExprAST*> (46)
+        on left: 37 38
+        on right: 41
+    vardefs <std::vector<VarBindingAST*>> (47)
+        on left: 39 40
+        on right: 27 40
+    binding <VarBindingAST*> (48)
+        on left: 41
+        on right: 39 40 52
+    expif <ExprAST*> (49)
+        on left: 42
+        on right: 35
+    idexp <ExprAST*> (50)
+        on left: 43 44
+        on right: 32
+    optexp <std::vector<ExprAST*>> (51)
+        on left: 45 46
+        on right: 44
+    explist <std::vector<ExprAST*>> (52)
+        on left: 47 48
+        on right: 46 48
+    ifstmt <IfStatementAST*> (53)
+        on left: 49 50
+        on right: 18
+    forstmt <ForStatementAST*> (54)
+        on left: 51
+        on right: 19
+    init <InitAST*> (55)
+        on left: 52 53
+        on right: 51
+    condexp <ExprAST*> (56)
+        on left: 54 55 56 57 58
+        on right: 42 49 50 51 55 56 57 58
+    relexp <ExprAST*> (57)
+        on left: 59 60
+        on right: 54 55 56
+
+
+State 0
+
+    0 $accept: • startsymb "end of file"
+
+    "extern"  shift, and go to state 1
+    "def"     shift, and go to state 2
+    "global"  shift, and go to state 3
+
+    ";"       reduce using rule 4 (top)
+    $default  reduce using rule 2 (program)
+
+    startsymb   go to state 4
+    program     go to state 5
+    top         go to state 6
+    definition  go to state 7
+    external    go to state 8
+    globalvar   go to state 9
+
+
+State 1
+
+    9 external: "extern" • proto
+
+    "id"  shift, and go to state 10
+
+    proto  go to state 11
+
+
+State 2
+
+    8 definition: "def" • proto block
+
+    "id"  shift, and go to state 10
+
+    proto  go to state 12
+
+
+State 3
+
+   11 globalvar: "global" • "id"
+
+    "id"  shift, and go to state 13
+
+
+State 4
+
+    0 $accept: startsymb • "end of file"
+
+    "end of file"  shift, and go to state 14
+
+
+State 5
+
+    1 startsymb: program •
+
+    $default  reduce using rule 1 (startsymb)
+
+
+State 6
+
+    3 program: top • ";" program
+
+    ";"  shift, and go to state 15
+
+
+State 7
+
+    5 top: definition •
+
+    $default  reduce using rule 5 (top)
+
+
+State 8
+
+    6 top: external •
+
+    $default  reduce using rule 6 (top)
+
+
+State 9
+
+    7 top: globalvar •
+
+    $default  reduce using rule 7 (top)
+
+
+State 10
+
+   10 proto: "id" • "(" idseq ")"
+
+    "("  shift, and go to state 16
+
+
+State 11
+
+    9 external: "extern" proto •
+
+    $default  reduce using rule 9 (external)
+
+
+State 12
+
+    8 definition: "def" proto • block
+
+    "{"  shift, and go to state 17
+
+    block  go to state 18
+
+
+State 13
+
+   11 globalvar: "global" "id" •
+
+    $default  reduce using rule 11 (globalvar)
+
+
+State 14
+
+    0 $accept: startsymb "end of file" •
+
+    $default  accept
+
+
+State 15
+
+    3 program: top ";" • program
+
+    "extern"  shift, and go to state 1
+    "def"     shift, and go to state 2
+    "global"  shift, and go to state 3
+
+    ";"       reduce using rule 4 (top)
+    $default  reduce using rule 2 (program)
+
+    program     go to state 19
+    top         go to state 6
+    definition  go to state 7
+    external    go to state 8
+    globalvar   go to state 9
+
+
+State 16
+
+   10 proto: "id" "(" • idseq ")"
+
+    "id"  shift, and go to state 20
+
+    $default  reduce using rule 12 (idseq)
+
+    idseq  go to state 21
+
+
+State 17
+
+   26 block: "{" • stmts "}"
+   27      | "{" • vardefs ";" stmts "}"
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "{"       shift, and go to state 17
+    "var"     shift, and go to state 24
+    "if"      shift, and go to state 25
+    "for"     shift, and go to state 26
+    "++"      shift, and go to state 27
+    "--"      shift, and go to state 28
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 30
+    "number"  shift, and go to state 31
+
+    stmts       go to state 32
+    stmt        go to state 33
+    assignment  go to state 34
+    block       go to state 35
+    exp         go to state 36
+    vardefs     go to state 37
+    binding     go to state 38
+    expif       go to state 39
+    idexp       go to state 40
+    ifstmt      go to state 41
+    forstmt     go to state 42
+    condexp     go to state 43
+    relexp      go to state 44
+
+
+State 18
+
+    8 definition: "def" proto block •
+
+    $default  reduce using rule 8 (definition)
+
+
+State 19
+
+    3 program: top ";" program •
+
+    $default  reduce using rule 3 (program)
+
+
+State 20
+
+   13 idseq: "id" • idseq
+
+    "id"  shift, and go to state 20
+
+    $default  reduce using rule 12 (idseq)
+
+    idseq  go to state 45
+
+
+State 21
+
+   10 proto: "id" "(" idseq • ")"
+
+    ")"  shift, and go to state 46
+
+
+State 22
+
+   36 exp: "-" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 48
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 23
+
+   33 exp: "(" • exp ")"
+   58 condexp: "(" • condexp ")"
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 49
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 50
+    relexp   go to state 44
+
+
+State 24
+
+   41 binding: "var" • "id" initexp
+
+    "id"  shift, and go to state 51
+
+
+State 25
+
+   49 ifstmt: "if" • "(" condexp ")" stmt
+   50       | "if" • "(" condexp ")" stmt "else" stmt
+
+    "("  shift, and go to state 52
+
+
+State 26
+
+   51 forstmt: "for" • "(" init ";" condexp ";" assignment ")" stmt
+
+    "("  shift, and go to state 53
+
+
+State 27
+
+   23 assignment: "++" • "id"
+
+    "id"  shift, and go to state 54
+
+
+State 28
+
+   25 assignment: "--" • "id"
+
+    "id"  shift, and go to state 55
+
+
+State 29
+
+   57 condexp: "not" • condexp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 56
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 57
+    relexp   go to state 44
+
+
+State 30
+
+   21 assignment: "id" • "=" exp
+   22           | "id" • "++"
+   24           | "id" • "--"
+   43 idexp: "id" •
+   44      | "id" • "(" optexp ")"
+
+    "("   shift, and go to state 58
+    "="   shift, and go to state 59
+    "++"  shift, and go to state 60
+    "--"  shift, and go to state 61
+
+    $default  reduce using rule 43 (idexp)
+
+
+State 31
+
+   34 exp: "number" •
+
+    $default  reduce using rule 34 (exp)
+
+
+State 32
+
+   26 block: "{" stmts • "}"
+
+    "}"  shift, and go to state 62
+
+
+State 33
+
+   14 stmts: stmt •
+   15      | stmt • ";" stmts
+
+    ";"  shift, and go to state 63
+
+    $default  reduce using rule 14 (stmts)
+
+
+State 34
+
+   16 stmt: assignment •
+
+    $default  reduce using rule 16 (stmt)
+
+
+State 35
+
+   17 stmt: block •
+
+    $default  reduce using rule 17 (stmt)
+
+
+State 36
+
+   20 stmt: exp •
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+    $default  reduce using rule 20 (stmt)
+
+
+State 37
+
+   27 block: "{" vardefs • ";" stmts "}"
+   40 vardefs: vardefs • ";" binding
+
+    ";"  shift, and go to state 70
+
+
+State 38
+
+   39 vardefs: binding •
+
+    $default  reduce using rule 39 (vardefs)
+
+
+State 39
+
+   35 exp: expif •
+
+    $default  reduce using rule 35 (exp)
+
+
+State 40
+
+   32 exp: idexp •
+
+    $default  reduce using rule 32 (exp)
+
+
+State 41
+
+   18 stmt: ifstmt •
+
+    $default  reduce using rule 18 (stmt)
+
+
+State 42
+
+   19 stmt: forstmt •
+
+    $default  reduce using rule 19 (stmt)
+
+
+State 43
+
+   42 expif: condexp • "?" exp ":" exp
+
+    "?"  shift, and go to state 71
+
+
+State 44
+
+   54 condexp: relexp •
+   55        | relexp • "and" condexp
+   56        | relexp • "or" condexp
+
+    "and"  shift, and go to state 72
+    "or"   shift, and go to state 73
+
+    $default  reduce using rule 54 (condexp)
+
+
+State 45
+
+   13 idseq: "id" idseq •
+
+    $default  reduce using rule 13 (idseq)
+
+
+State 46
+
+   10 proto: "id" "(" idseq ")" •
+
+    $default  reduce using rule 10 (proto)
+
+
+State 47
+
+   43 idexp: "id" •
+   44      | "id" • "(" optexp ")"
+
+    "("  shift, and go to state 58
+
+    $default  reduce using rule 43 (idexp)
+
+
+State 48
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   36    | "-" exp •
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "*"  shift, and go to state 66
+    "/"  shift, and go to state 67
+
+    $default  reduce using rule 36 (exp)
+
+
+State 49
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   33    | "(" exp • ")"
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    ")"   shift, and go to state 74
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+
+State 50
+
+   42 expif: condexp • "?" exp ":" exp
+   58 condexp: "(" condexp • ")"
+
+    ")"  shift, and go to state 75
+    "?"  shift, and go to state 71
+
+
+State 51
+
+   41 binding: "var" "id" • initexp
+
+    "="  shift, and go to state 76
+
+    $default  reduce using rule 37 (initexp)
+
+    initexp  go to state 77
+
+
+State 52
+
+   49 ifstmt: "if" "(" • condexp ")" stmt
+   50       | "if" "(" • condexp ")" stmt "else" stmt
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 56
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 78
+    relexp   go to state 44
+
+
+State 53
+
+   51 forstmt: "for" "(" • init ";" condexp ";" assignment ")" stmt
+
+    "var"  shift, and go to state 24
+    "++"   shift, and go to state 27
+    "--"   shift, and go to state 28
+    "id"   shift, and go to state 79
+
+    assignment  go to state 80
+    binding     go to state 81
+    init        go to state 82
+
+
+State 54
+
+   23 assignment: "++" "id" •
+
+    $default  reduce using rule 23 (assignment)
+
+
+State 55
+
+   25 assignment: "--" "id" •
+
+    $default  reduce using rule 25 (assignment)
+
+
+State 56
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+
+State 57
+
+   42 expif: condexp • "?" exp ":" exp
+   57 condexp: "not" condexp •
+
+    $default  reduce using rule 57 (condexp)
+
+
+State 58
+
+   44 idexp: "id" "(" • optexp ")"
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    $default  reduce using rule 45 (optexp)
+
+    exp      go to state 83
+    expif    go to state 39
+    idexp    go to state 40
+    optexp   go to state 84
+    explist  go to state 85
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 59
+
+   21 assignment: "id" "=" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 86
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 60
+
+   22 assignment: "id" "++" •
+
+    $default  reduce using rule 22 (assignment)
+
+
+State 61
+
+   24 assignment: "id" "--" •
+
+    $default  reduce using rule 24 (assignment)
+
+
+State 62
+
+   26 block: "{" stmts "}" •
+
+    $default  reduce using rule 26 (block)
+
+
+State 63
+
+   15 stmts: stmt ";" • stmts
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "{"       shift, and go to state 17
+    "if"      shift, and go to state 25
+    "for"     shift, and go to state 26
+    "++"      shift, and go to state 27
+    "--"      shift, and go to state 28
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 30
+    "number"  shift, and go to state 31
+
+    stmts       go to state 87
+    stmt        go to state 33
+    assignment  go to state 34
+    block       go to state 35
+    exp         go to state 36
+    expif       go to state 39
+    idexp       go to state 40
+    ifstmt      go to state 41
+    forstmt     go to state 42
+    condexp     go to state 43
+    relexp      go to state 44
+
+
+State 64
+
+   29 exp: exp "-" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 88
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 65
+
+   28 exp: exp "+" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 89
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 66
+
+   30 exp: exp "*" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 90
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 67
+
+   31 exp: exp "/" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 91
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 68
+
+   59 relexp: exp "<" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 92
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 69
+
+   60 relexp: exp "==" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 93
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 70
+
+   27 block: "{" vardefs ";" • stmts "}"
+   40 vardefs: vardefs ";" • binding
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "{"       shift, and go to state 17
+    "var"     shift, and go to state 24
+    "if"      shift, and go to state 25
+    "for"     shift, and go to state 26
+    "++"      shift, and go to state 27
+    "--"      shift, and go to state 28
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 30
+    "number"  shift, and go to state 31
+
+    stmts       go to state 94
+    stmt        go to state 33
+    assignment  go to state 34
+    block       go to state 35
+    exp         go to state 36
+    binding     go to state 95
+    expif       go to state 39
+    idexp       go to state 40
+    ifstmt      go to state 41
+    forstmt     go to state 42
+    condexp     go to state 43
+    relexp      go to state 44
+
+
+State 71
+
+   42 expif: condexp "?" • exp ":" exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 96
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 72
+
+   55 condexp: relexp "and" • condexp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 56
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 97
+    relexp   go to state 44
+
+
+State 73
+
+   56 condexp: relexp "or" • condexp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 56
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 98
+    relexp   go to state 44
+
+
+State 74
+
+   33 exp: "(" exp ")" •
+
+    $default  reduce using rule 33 (exp)
+
+
+State 75
+
+   58 condexp: "(" condexp ")" •
+
+    $default  reduce using rule 58 (condexp)
+
+
+State 76
+
+   38 initexp: "=" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 99
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 77
+
+   41 binding: "var" "id" initexp •
+
+    $default  reduce using rule 41 (binding)
+
+
+State 78
+
+   42 expif: condexp • "?" exp ":" exp
+   49 ifstmt: "if" "(" condexp • ")" stmt
+   50       | "if" "(" condexp • ")" stmt "else" stmt
+
+    ")"  shift, and go to state 100
+    "?"  shift, and go to state 71
+
+
+State 79
+
+   21 assignment: "id" • "=" exp
+   22           | "id" • "++"
+   24           | "id" • "--"
+
+    "="   shift, and go to state 59
+    "++"  shift, and go to state 60
+    "--"  shift, and go to state 61
+
+
+State 80
+
+   53 init: assignment •
+
+    $default  reduce using rule 53 (init)
+
+
+State 81
+
+   52 init: binding •
+
+    $default  reduce using rule 52 (init)
+
+
+State 82
+
+   51 forstmt: "for" "(" init • ";" condexp ";" assignment ")" stmt
+
+    ";"  shift, and go to state 101
+
+
+State 83
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   47 explist: exp •
+   48        | exp • "," explist
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    ","   shift, and go to state 102
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+    $default  reduce using rule 47 (explist)
+
+
+State 84
+
+   44 idexp: "id" "(" optexp • ")"
+
+    ")"  shift, and go to state 103
+
+
+State 85
+
+   46 optexp: explist •
+
+    $default  reduce using rule 46 (optexp)
+
+
+State 86
+
+   21 assignment: "id" "=" exp •
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+    $default  reduce using rule 21 (assignment)
+
+
+State 87
+
+   15 stmts: stmt ";" stmts •
+
+    $default  reduce using rule 15 (stmts)
+
+
+State 88
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   29    | exp "-" exp •
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "*"  shift, and go to state 66
+    "/"  shift, and go to state 67
+
+    $default  reduce using rule 29 (exp)
+
+
+State 89
+
+   28 exp: exp • "+" exp
+   28    | exp "+" exp •
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "*"  shift, and go to state 66
+    "/"  shift, and go to state 67
+
+    $default  reduce using rule 28 (exp)
+
+
+State 90
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   30    | exp "*" exp •
+   31    | exp • "/" exp
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    $default  reduce using rule 30 (exp)
+
+
+State 91
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   31    | exp "/" exp •
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    $default  reduce using rule 31 (exp)
+
+
+State 92
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   59 relexp: exp • "<" exp
+   59       | exp "<" exp •
+   60       | exp • "==" exp
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+    $default  reduce using rule 59 (relexp)
+
+
+State 93
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+   60       | exp "==" exp •
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+    $default  reduce using rule 60 (relexp)
+
+
+State 94
+
+   27 block: "{" vardefs ";" stmts • "}"
+
+    "}"  shift, and go to state 104
+
+
+State 95
+
+   40 vardefs: vardefs ";" binding •
+
+    $default  reduce using rule 40 (vardefs)
+
+
+State 96
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   42 expif: condexp "?" exp • ":" exp
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    ":"   shift, and go to state 105
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+
+State 97
+
+   42 expif: condexp • "?" exp ":" exp
+   55 condexp: relexp "and" condexp •
+
+    "?"  shift, and go to state 71
+
+    "?"       [reduce using rule 55 (condexp)]
+    $default  reduce using rule 55 (condexp)
+
+    shift/reduce conflict on token "?":
+       55 condexp: relexp "and" condexp •
+       42 expif: condexp • "?" exp ":" exp
+      First example: "<" exp "<" exp
+      Shift derivation
+        condexp
+        ↳ 55: "<" exp condexp
+                      ↳ 54: relexp
+                            ↳ 59: "<" exp
+      Second example: "and" condexp
+      Reduce derivation
+        condexp
+        ↳ 55: "and" condexp
+
+
+
+State 98
+
+   42 expif: condexp • "?" exp ":" exp
+   56 condexp: relexp "or" condexp •
+
+    "?"  shift, and go to state 71
+
+    "?"       [reduce using rule 56 (condexp)]
+    $default  reduce using rule 56 (condexp)
+
+    shift/reduce conflict on token "?":
+       56 condexp: relexp "or" condexp •
+       42 expif: condexp • "?" exp ":" exp
+      First example: "<" exp "<" exp
+      Shift derivation
+        condexp
+        ↳ 56: "<" exp condexp
+                      ↳ 54: relexp
+                            ↳ 59: "<" exp
+      Second example: "or" condexp
+      Reduce derivation
+        condexp
+        ↳ 56: "or" condexp
+
+
+
+State 99
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   38 initexp: "=" exp •
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+    $default  reduce using rule 38 (initexp)
+
+
+State 100
+
+   49 ifstmt: "if" "(" condexp ")" • stmt
+   50       | "if" "(" condexp ")" • stmt "else" stmt
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "{"       shift, and go to state 17
+    "if"      shift, and go to state 25
+    "for"     shift, and go to state 26
+    "++"      shift, and go to state 27
+    "--"      shift, and go to state 28
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 30
+    "number"  shift, and go to state 31
+
+    stmt        go to state 106
+    assignment  go to state 34
+    block       go to state 35
+    exp         go to state 36
+    expif       go to state 39
+    idexp       go to state 40
+    ifstmt      go to state 41
+    forstmt     go to state 42
+    condexp     go to state 43
+    relexp      go to state 44
+
+
+State 101
+
+   51 forstmt: "for" "(" init ";" • condexp ";" assignment ")" stmt
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 56
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 107
+    relexp   go to state 44
+
+
+State 102
+
+   48 explist: exp "," • explist
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 83
+    expif    go to state 39
+    idexp    go to state 40
+    explist  go to state 108
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 103
+
+   44 idexp: "id" "(" optexp ")" •
+
+    $default  reduce using rule 44 (idexp)
+
+
+State 104
+
+   27 block: "{" vardefs ";" stmts "}" •
+
+    $default  reduce using rule 27 (block)
+
+
+State 105
+
+   42 expif: condexp "?" exp ":" • exp
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 47
+    "number"  shift, and go to state 31
+
+    exp      go to state 109
+    expif    go to state 39
+    idexp    go to state 40
+    condexp  go to state 43
+    relexp   go to state 44
+
+
+State 106
+
+   49 ifstmt: "if" "(" condexp ")" stmt •
+   50       | "if" "(" condexp ")" stmt • "else" stmt
+
+    "else"  shift, and go to state 110
+
+    $default  reduce using rule 49 (ifstmt)
+
+
+State 107
+
+   42 expif: condexp • "?" exp ":" exp
+   51 forstmt: "for" "(" init ";" condexp • ";" assignment ")" stmt
+
+    ";"  shift, and go to state 111
+    "?"  shift, and go to state 71
+
+
+State 108
+
+   48 explist: exp "," explist •
+
+    $default  reduce using rule 48 (explist)
+
+
+State 109
+
+   28 exp: exp • "+" exp
+   29    | exp • "-" exp
+   30    | exp • "*" exp
+   31    | exp • "/" exp
+   42 expif: condexp "?" exp ":" exp •
+   59 relexp: exp • "<" exp
+   60       | exp • "==" exp
+
+    "-"   shift, and go to state 64
+    "+"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "<"   shift, and go to state 68
+    "=="  shift, and go to state 69
+
+    $default  reduce using rule 42 (expif)
+
+
+State 110
+
+   50 ifstmt: "if" "(" condexp ")" stmt "else" • stmt
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "{"       shift, and go to state 17
+    "if"      shift, and go to state 25
+    "for"     shift, and go to state 26
+    "++"      shift, and go to state 27
+    "--"      shift, and go to state 28
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 30
+    "number"  shift, and go to state 31
+
+    stmt        go to state 112
+    assignment  go to state 34
+    block       go to state 35
+    exp         go to state 36
+    expif       go to state 39
+    idexp       go to state 40
+    ifstmt      go to state 41
+    forstmt     go to state 42
+    condexp     go to state 43
+    relexp      go to state 44
+
+
+State 111
+
+   51 forstmt: "for" "(" init ";" condexp ";" • assignment ")" stmt
+
+    "++"  shift, and go to state 27
+    "--"  shift, and go to state 28
+    "id"  shift, and go to state 79
+
+    assignment  go to state 113
+
+
+State 112
+
+   50 ifstmt: "if" "(" condexp ")" stmt "else" stmt •
+
+    $default  reduce using rule 50 (ifstmt)
+
+
+State 113
+
+   51 forstmt: "for" "(" init ";" condexp ";" assignment • ")" stmt
+
+    ")"  shift, and go to state 114
+
+
+State 114
+
+   51 forstmt: "for" "(" init ";" condexp ";" assignment ")" • stmt
+
+    "-"       shift, and go to state 22
+    "("       shift, and go to state 23
+    "{"       shift, and go to state 17
+    "if"      shift, and go to state 25
+    "for"     shift, and go to state 26
+    "++"      shift, and go to state 27
+    "--"      shift, and go to state 28
+    "not"     shift, and go to state 29
+    "id"      shift, and go to state 30
+    "number"  shift, and go to state 31
+
+    stmt        go to state 115
+    assignment  go to state 34
+    block       go to state 35
+    exp         go to state 36
+    expif       go to state 39
+    idexp       go to state 40
+    ifstmt      go to state 41
+    forstmt     go to state 42
+    condexp     go to state 43
+    relexp      go to state 44
+
+
+State 115
+
+   51 forstmt: "for" "(" init ";" condexp ";" assignment ")" stmt •
+
+    $default  reduce using rule 51 (forstmt)
